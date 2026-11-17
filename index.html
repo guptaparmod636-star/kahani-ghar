@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Kahani Ghar</title>
+<style>
+:root{--bg:#fbf7f0;--card:#fff;--ink:#2b2438;--mute:#6f6781;--acc:#7c4dff;--line:#e6dfd2}
+@media (prefers-color-scheme:dark){:root{--bg:#17141f;--card:#221e2e;--ink:#f0ecf8;--mute:#a79fbb;--acc:#a58bff;--line:#363047}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,"Segoe UI",sans-serif;line-height:1.6}
+main{max-width:720px;margin:0 auto;padding:24px 16px 48px}
+h1{margin:0 0 4px}.sub{color:var(--mute);margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px}
+label{font-size:.85rem;color:var(--mute);display:block;margin:10px 0 4px}
+input,select{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:1rem}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{width:100%;margin-top:14px;padding:13px;border:0;border-radius:12px;background:var(--acc);color:#fff;font-size:1rem;font-weight:600;cursor:pointer}
+button:disabled{opacity:.6;cursor:wait}
+#img{width:100%;border-radius:12px;display:none;margin-bottom:8px}
+#story{white-space:pre-wrap}#msg{color:var(--mute);margin-top:10px}.hide{display:none}
+</style>
+</head>
+<body>
+<main>
+<h1>📖 AI Kahani Ghar</h1>
+<p class="sub">Topic likho — AI kahani aur uski tasveer dono banayega.</p>
+<div class="card">
+  <label for="topic">Topic / idea</label>
+  <input id="topic" maxlength="200" placeholder="Jaise: ek chhota robot jo barish se darta tha">
+  <div class="row">
+    <div><label for="lang">Language</label>
+      <select id="lang"><option>Hinglish</option><option>Hindi</option><option>English</option><option>Punjabi</option></select></div>
+    <div><label for="len">Length</label>
+      <select id="len"><option value="short">Short</option><option value="medium" selected>Medium</option><option value="long">Long</option></select></div>
+  </div>
+  <label for="genre">Style</label>
+  <select id="genre"><option>Bacchon ki kahani</option><option>Adventure</option><option>Mystery</option><option>Sci-fi</option><option>Funny</option><option>Moral story</option></select>
+  <button id="go">✨ Kahani banao</button>
+  <div id="msg"></div>
+</div>
+<div id="out" class="card hide">
+  <img id="img" alt="Story illustration">
+  <h2 id="title"></h2>
+  <div id="story"></div>
+</div>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+$('go').onclick = async () => {
+  const topic = $('topic').value.trim();
+  if (!topic) { $('msg').textContent = 'Pehle topic likho.'; return; }
+  $('go').disabled = true;
+  $('msg').textContent = 'Kahani aur tasveer ban rahi hai (thoda time lagega)…';
+  $('out').classList.add('hide'); $('img').style.display = 'none';
+  try {
+    const r = await fetch('/api/generate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({topic, language: $('lang').value, length: $('len').value, genre: $('genre').value})
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error');
+    $('title').textContent = d.title;
+    $('story').textContent = d.story;
+    if (d.image) { $('img').src = d.image; $('img').style.display = 'block'; }
+    $('out').classList.remove('hide');
+    $('msg').textContent = d.image ? '' : 'Tasveer nahi ban payi: ' + (d.image_error || '');
+  } catch (e) {
+    $('msg').textContent = e.message;
+  } finally { $('go').disabled = false; }
+};
+</script>
+</body>
+</html>
